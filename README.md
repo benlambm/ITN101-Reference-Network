@@ -199,14 +199,7 @@ ITN101-Reference-Network/
 
 ### Packet Tracer Virtual Lab
 
-See [labs/PACKET_TRACER_BUILD_GUIDE.md](labs/PACKET_TRACER_BUILD_GUIDE.md) for detailed instructions including:
-- Device substitutions (PT uses 4321 instead of 4221, 3560 instead of C1000)
-- Module installation (HWIC-2T for R3 serial ports)
-- Cabling diagram
-- Config paste tips
-- Endpoint configuration
-- Verification commands
-- HSRP failover demo procedure
+See [labs/PACKET_TRACER_BUILD_GUIDE.md](labs/PACKET_TRACER_BUILD_GUIDE.md) for detailed instructions
 
 ---
 
@@ -286,8 +279,6 @@ If step 2 fails but step 1 works, the problem is between your device and the swi
 
 ## Contributing
 
-This is a teaching resource. If you're a VCCS instructor or networking educator and want to adapt it:
-
 1. Fork the repo
 2. Adjust IP schemes, VLANs, or device models to match your lab
 3. Submit a PR if you build something others could use (lab worksheets, Packet Tracer activities, etc.)
@@ -298,4 +289,3 @@ This is a teaching resource. If you're a VCCS instructor or networking educator 
 
 [CC BY-NC-SA 4.0](LICENSE) — Free to share and adapt for non-commercial educational use with attribution.
 
-**Benjamin Lamb** · Brightpoint Community College · BET Division · Spring 2026
