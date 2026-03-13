@@ -96,15 +96,38 @@ ITN101-Reference-Network/
 │       ├── SW-DIST-PT.txt
 │       └── SW-ACC-PT.txt
 │
+├── inventory/
+│   └── ITN101_Network_Inventory.xlsx  ← Asset inventory, IPAM, port maps, cabling
+│
+├── change-management/
+│   ├── RFC_Template.docx              ← Blank Request for Change form
+│   ├── RFC-001_IOS_Upgrade.docx       ← Pre-filled example RFC
+│   └── change-management-policy.md    ← When/why/how to submit RFCs
+│
+├── policies/
+│   ├── acceptable-use-policy.md       ← Lab network AUP
+│   ├── sla-template.md                ← Simplified Service Level Agreement
+│   ├── naming-conventions.md          ← IP, VLAN, hostname, and cabling standards
+│   ├── incident-response.md           ← "The network is down" playbook
+│   └── lab-safety.md                  ← Physical access and equipment handling
+│
 ├── docs/
 │   ├── ITN101_Reference_Network.docx  ← Full reference documentation (accessible)
-│   └── ITN101_Golden_Configs.docx     ← Consolidated config guide with verification
+│   ├── ITN101_Golden_Configs.docx     ← Consolidated config guide with verification
+│   ├── CHANGELOG.md                   ← Version history and change log
+│   ├── KNOWN_ISSUES.md                ← Hardware quirks, PT limitations, open items
+│   └── runbooks/                      ← Operational procedures (SOPs)
+│       ├── ios-upgrade.md             ← IOS upgrade via USB (ISR 4221)
+│       ├── backup-restore.md          ← Config backup and restore procedures
+│       ├── hsrp-failover.md           ← HSRP failover demo and recovery
+│       └── add-vlan.md                ← Adding a new VLAN end-to-end
 │
 ├── slides/
 │   └── ITN101_Reference_Network.pptx  ← 6-slide reference deck
 │
 ├── diagrams/
-│   └── topology.txt                   ← ASCII topology + addressing tables
+│   ├── topology.txt                   ← ASCII topology + addressing tables
+│   └── rack-layout.md                 ← Physical rack elevation diagram
 │
 └── labs/
     └── PACKET_TRACER_BUILD_GUIDE.md   ← Step-by-step PT assembly instructions
