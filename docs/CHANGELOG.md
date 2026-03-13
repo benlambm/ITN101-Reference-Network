@@ -6,6 +6,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO 86
 
 ---
 
+## [1.3.0] — 2026-03-13
+
+### Added
+- `docs/runbooks/factory-reset-*.md` — Device-specific factory reset runbooks:
+  - `factory-reset-isr4221.md` — ISR 4221 (R1/R2): CLI, ROMMON, no-service-password-recovery
+  - `factory-reset-isr1941.md` — ISR 1941 (R3): CLI, ROMMON, no-service-password-recovery
+  - `factory-reset-c1000.md` — Catalyst 1000 (SW-DIST): CLI, Mode button, no-service-password-recovery
+  - `factory-reset-c2960.md` — Catalyst 2960 (SW-ACC): CLI, Mode button + flash_init, no-service-password-recovery
+
+### Changed
+- Updated README.md repo structure tree to include factory reset runbooks
+
+---
+
 ## [1.2.0] — 2026-03-13
 
 ### Added

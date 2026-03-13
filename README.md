@@ -120,7 +120,11 @@ ITN101-Reference-Network/
 │       ├── ios-upgrade.md             ← IOS upgrade via USB (ISR 4221)
 │       ├── backup-restore.md          ← Config backup and restore procedures
 │       ├── hsrp-failover.md           ← HSRP failover demo and recovery
-│       └── add-vlan.md                ← Adding a new VLAN end-to-end
+│       ├── add-vlan.md                ← Adding a new VLAN end-to-end
+│       ├── factory-reset-isr4221.md   ← Factory reset: ISR 4221 (R1/R2)
+│       ├── factory-reset-isr1941.md   ← Factory reset: ISR 1941 (R3)
+│       ├── factory-reset-c1000.md     ← Factory reset: Catalyst 1000 (SW-DIST)
+│       └── factory-reset-c2960.md     ← Factory reset: Catalyst 2960 (SW-ACC)
 │
 ├── slides/
 │   └── ITN101_Reference_Network.pptx  ← 6-slide reference deck
