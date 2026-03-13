@@ -1,0 +1,163 @@
+! ============================================================
+! SW-ACC - Catalyst 2960 | ACCESS LAYER
+! End-device connectivity
+! Trunk uplink to SW-DIST on Fa0/24
+! VLANs 10, 20, 30, 99, 999
+! Telnet access
+! ============================================================
+
+enable
+configure terminal
+
+! --- Hostname ---
+hostname SW-ACC
+no ip domain-lookup
+
+! --- Security ---
+enable secret cisco
+service password-encryption
+
+! --- Console ---
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exec-timeout 30 0
+ exit
+
+! --- VTY (Telnet) ---
+line vty 0 4
+ password cisco
+ login
+ transport input telnet
+ exec-timeout 30 0
+ exit
+line vty 5 15
+ password cisco
+ login
+ transport input telnet
+ exit
+
+! --- Banner ---
+banner motd #
+*****************************************************
+*  SW-ACC - ITN 101 Lab | Access Switch              *
+*  Catalyst 2960 | End-Device Ports                  *
+*  Authorized access only                            *
+*****************************************************
+#
+
+! ============================================================
+! VLANs
+! ============================================================
+
+vlan 10
+ name STUDENTS
+ exit
+vlan 20
+ name FACULTY
+ exit
+vlan 30
+ name SERVERS
+ exit
+vlan 99
+ name MANAGEMENT
+ exit
+vlan 999
+ name BLACKHOLE
+ exit
+
+! ============================================================
+! TRUNK UPLINK
+! ============================================================
+
+! --- Fa0/24: Trunk to SW-DIST ---
+interface FastEthernet0/24
+ description TRUNK_TO_SW-DIST
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! ============================================================
+! ACCESS PORTS - VLAN 10 (Students)
+! ============================================================
+
+interface range FastEthernet0/1 - 4
+ description STUDENT_PC
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! ============================================================
+! ACCESS PORTS - VLAN 20 (Faculty)
+! ============================================================
+
+interface range FastEthernet0/5 - 8
+ description FACULTY_PC
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! ============================================================
+! ACCESS PORTS - VLAN 30 (Servers / Branch devices)
+! ============================================================
+
+interface range FastEthernet0/9 - 12
+ description SERVER_PORT
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! ============================================================
+! UNUSED PORTS --> BLACKHOLE
+! ============================================================
+
+interface range FastEthernet0/13 - 23
+ description UNUSED_BLACKHOLED
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+! ============================================================
+! MANAGEMENT SVI
+! ============================================================
+
+interface Vlan99
+ description MANAGEMENT_SVI
+ ip address 172.16.0.12 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.0.1
+
+! ============================================================
+! NTP (Client - syncs to R1)
+! ============================================================
+
+ntp server 172.16.0.1
+
+! ============================================================
+! SAVE
+! ============================================================
+
+end
+copy running-config startup-config
+
+! ============================================================
+! VERIFICATION COMMANDS
+! ============================================================
+! show vlan brief
+! show interfaces trunk
+! show interfaces status
+! show spanning-tree summary
+! show ntp associations
+! show ip interface brief

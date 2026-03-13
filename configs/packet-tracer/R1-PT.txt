@@ -1,0 +1,142 @@
+! ============================================================
+! R1 - 4321 (PT equivalent of ISR 4221)
+! CORE LAYER | HSRP Active VL10/40
+! Packet Tracer Compatible
+! ============================================================
+! NOTES:
+!  - PT uses 4321 instead of 4221 (closest match)
+!  - 'security passwords min-length' not supported in PT
+!  - 'ntp master' syntax differs; use 'ntp master <stratum>'
+!  - 'ip ssh version 2' must come AFTER key generation
+!  - NAT may require 'ip routing' explicitly in some PT versions
+! ============================================================
+
+enable
+configure terminal
+
+hostname R1
+no ip domain-lookup
+ip domain-name itn101.lab
+
+enable secret cisco
+service password-encryption
+
+username admin privilege 15 secret cisco
+crypto key generate rsa
+! When prompted for modulus, enter: 2048
+
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exit
+
+line vty 0 4
+ login local
+ transport input ssh
+ exit
+ip ssh version 2
+
+banner motd #R1 - ITN 101 Lab | Core Router (HSRP Active) | Authorized access only#
+
+! --- Interfaces ---
+
+interface GigabitEthernet0/0/0
+ description ISP_UPLINK
+ ip address dhcp
+ ip nat outside
+ no shutdown
+ exit
+
+interface GigabitEthernet0/0/1
+ description TRUNK_TO_SW-DIST
+ no ip address
+ no shutdown
+ exit
+
+interface GigabitEthernet0/0/1.10
+ description VLAN10_STUDENTS
+ encapsulation dot1Q 10
+ ip address 192.168.10.2 255.255.255.0
+ ip nat inside
+ standby 10 ip 192.168.10.1
+ standby 10 priority 110
+ standby 10 preempt
+ exit
+
+interface GigabitEthernet0/0/1.20
+ description VLAN20_FACULTY
+ encapsulation dot1Q 20
+ ip address 192.168.20.3 255.255.255.0
+ ip nat inside
+ standby 20 ip 192.168.20.1
+ standby 20 priority 100
+ standby 20 preempt
+ exit
+
+interface GigabitEthernet0/0/1.40
+ description VLAN40_WIRELESS
+ encapsulation dot1Q 40
+ ip address 192.168.40.2 255.255.255.0
+ ip nat inside
+ standby 40 ip 192.168.40.1
+ standby 40 priority 110
+ standby 40 preempt
+ exit
+
+interface GigabitEthernet0/0/1.99
+ description VLAN99_MANAGEMENT
+ encapsulation dot1Q 99
+ ip address 172.16.0.1 255.255.255.0
+ exit
+
+! --- DHCP ---
+
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+ip dhcp excluded-address 192.168.40.1 192.168.40.10
+
+ip dhcp pool VLAN10-STUDENTS
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 192.168.30.10
+ exit
+
+ip dhcp pool VLAN20-FACULTY
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 192.168.30.10
+ exit
+
+ip dhcp pool VLAN40-WIRELESS
+ network 192.168.40.0 255.255.255.0
+ default-router 192.168.40.1
+ dns-server 192.168.30.10
+ exit
+
+! --- NAT ---
+
+access-list 1 permit 192.168.10.0 0.0.0.255
+access-list 1 permit 192.168.20.0 0.0.0.255
+access-list 1 permit 192.168.30.0 0.0.0.255
+access-list 1 permit 192.168.40.0 0.0.0.255
+access-list 1 permit 172.16.0.0 0.0.0.255
+ip nat inside source list 1 interface GigabitEthernet0/0/0 overload
+
+! --- OSPF ---
+
+router ospf 1
+ router-id 1.1.1.1
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+ network 192.168.40.0 0.0.0.255 area 0
+ network 172.16.0.0 0.0.0.255 area 0
+ passive-interface GigabitEthernet0/0/0
+ default-information originate
+ exit
+
+! --- NTP ---
+ntp master 4
+
+end
+copy running-config startup-config

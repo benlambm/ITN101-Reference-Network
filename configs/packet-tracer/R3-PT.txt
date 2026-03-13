@@ -1,0 +1,87 @@
+! ============================================================
+! R3 - 1941 | BRANCH ROUTER
+! WAN to R2 | Branch LAN VLAN 30
+! Packet Tracer Compatible
+! ============================================================
+! NOTES:
+!  - In PT, the 1941 has G0/0 and G0/1 by default
+!  - Add HWIC-2T module in PT: power off > Physical tab >
+!    drag HWIC-2T into an open HWIC slot > power on
+!  - Serial interfaces become S0/0/0 and S0/0/1 after module
+! ============================================================
+
+enable
+configure terminal
+
+hostname R3
+no ip domain-lookup
+
+enable secret cisco
+service password-encryption
+
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exit
+
+line vty 0 4
+ password cisco
+ login
+ transport input telnet
+ exit
+
+banner motd #R3 - ITN 101 Lab | Branch Router | Authorized access only#
+
+! --- Interfaces ---
+
+interface GigabitEthernet0/1
+ description WAN_TO_R2_CAMPUS
+ ip address 10.0.1.2 255.255.255.252
+ no shutdown
+ exit
+
+interface GigabitEthernet0/0
+ description BRANCH_LAN_VLAN30
+ ip address 192.168.30.1 255.255.255.0
+ no shutdown
+ exit
+
+! --- Serial (leave shutdown until serial labs) ---
+! Add HWIC-2T module first (see notes above)
+
+interface Serial0/0/0
+ description SERIAL_LAB_PORT_0
+ no ip address
+ shutdown
+ exit
+
+interface Serial0/0/1
+ description SERIAL_LAB_PORT_1
+ no ip address
+ shutdown
+ exit
+
+! --- DHCP ---
+
+ip dhcp excluded-address 192.168.30.1 192.168.30.20
+
+ip dhcp pool VLAN30-BRANCH
+ network 192.168.30.0 255.255.255.0
+ default-router 192.168.30.1
+ dns-server 192.168.30.10
+ exit
+
+! --- OSPF ---
+
+router ospf 1
+ router-id 3.3.3.3
+ network 10.0.1.0 0.0.0.3 area 0
+ network 192.168.30.0 0.0.0.255 area 0
+ passive-interface GigabitEthernet0/0
+ exit
+
+ntp server 172.16.0.1
+
+end
+copy running-config startup-config
