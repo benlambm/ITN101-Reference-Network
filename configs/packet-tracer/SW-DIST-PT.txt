@@ -1,0 +1,121 @@
+! ============================================================
+! SW-DIST - 3560-24PS (PT equivalent of Catalyst 1000)
+! DISTRIBUTION LAYER | L2 Backbone
+! Packet Tracer Compatible
+! ============================================================
+! NOTES:
+!  - PT uses 3560 for L3-capable switches (closest to C1000)
+!  - 'spanning-tree vlan X root primary' works in PT
+!  - PT GigabitEthernet ports: Gi0/1, Gi0/2 (not Gi1/0/x)
+!  - Adjust interface names if your PT model differs
+! ============================================================
+
+enable
+configure terminal
+
+hostname SW-DIST
+no ip domain-lookup
+
+enable secret cisco
+service password-encryption
+
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exit
+
+line vty 0 4
+ password cisco
+ login
+ transport input telnet
+ exit
+line vty 5 15
+ password cisco
+ login
+ transport input telnet
+ exit
+
+banner motd #SW-DIST - ITN 101 Lab | Distribution Switch | Authorized access only#
+
+! --- VLANs ---
+
+vlan 10
+ name STUDENTS
+ exit
+vlan 20
+ name FACULTY
+ exit
+vlan 30
+ name SERVERS
+ exit
+vlan 40
+ name WIRELESS
+ exit
+vlan 99
+ name MANAGEMENT
+ exit
+vlan 999
+ name BLACKHOLE
+ exit
+
+! --- Trunks ---
+! NOTE: Adjust interface names to match your PT switch model.
+! 3560-24PS uses GigabitEthernet0/1, GigabitEthernet0/2, FastEthernet0/1-24
+
+interface GigabitEthernet0/1
+ description TRUNK_TO_R1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+interface GigabitEthernet0/2
+ description TRUNK_TO_R2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+interface FastEthernet0/1
+ description TRUNK_TO_SW-ACC
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+interface FastEthernet0/2
+ description TRUNK_TO_WAP-1
+ switchport mode trunk
+ switchport trunk allowed vlan 40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! --- Unused ports ---
+
+interface range FastEthernet0/3 - 24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+! --- Management ---
+
+interface Vlan99
+ ip address 172.16.0.11 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.0.1
+
+! --- STP ---
+spanning-tree vlan 10,20,30,40,99 root primary
+
+ntp server 172.16.0.1
+
+end
+copy running-config startup-config

@@ -1,0 +1,140 @@
+! ============================================================
+! R2 - ISR 4221 | CORE LAYER
+! HSRP Active: VLAN 20
+! HSRP Standby: VLAN 10, VLAN 40
+! WAN link to R3 (Branch), OSPF, SSH
+! ============================================================
+
+enable
+configure terminal
+
+! --- Hostname & Domain ---
+hostname R2
+no ip domain-lookup
+ip domain-name itn101.lab
+
+! --- Security ---
+enable secret cisco
+service password-encryption
+security passwords min-length 5
+
+! --- SSH ---
+username admin privilege 15 secret cisco
+crypto key generate rsa modulus 2048
+
+! --- Console ---
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exec-timeout 30 0
+ exit
+
+! --- VTY (SSH only) ---
+line vty 0 4
+ login local
+ transport input ssh
+ exec-timeout 30 0
+ exit
+ip ssh version 2
+
+! --- Banner ---
+banner motd #
+*****************************************************
+*  R2 - ITN 101 Lab | Core Router (HSRP Active 20) *
+*  WAN Transit to Branch                           *
+*  Authorized access only                           *
+*****************************************************
+#
+
+! ============================================================
+! INTERFACES
+! ============================================================
+
+! --- G0/0/0: Trunk to SW-DIST (physical interface, no IP) ---
+interface GigabitEthernet0/0/0
+ description TRUNK_TO_SW-DIST
+ no ip address
+ no shutdown
+ exit
+
+! --- Subinterface: VLAN 10 - Students (Standby) ---
+interface GigabitEthernet0/0/0.10
+ description VLAN10_STUDENTS
+ encapsulation dot1Q 10
+ ip address 192.168.10.3 255.255.255.0
+ standby 10 ip 192.168.10.1
+ standby 10 priority 100
+ standby 10 preempt
+ exit
+
+! --- Subinterface: VLAN 20 - Faculty (Active) ---
+interface GigabitEthernet0/0/0.20
+ description VLAN20_FACULTY
+ encapsulation dot1Q 20
+ ip address 192.168.20.2 255.255.255.0
+ standby 20 ip 192.168.20.1
+ standby 20 priority 110
+ standby 20 preempt
+ exit
+
+! --- Subinterface: VLAN 40 - Wireless (Standby) ---
+interface GigabitEthernet0/0/0.40
+ description VLAN40_WIRELESS
+ encapsulation dot1Q 40
+ ip address 192.168.40.3 255.255.255.0
+ standby 40 ip 192.168.40.1
+ standby 40 priority 100
+ standby 40 preempt
+ exit
+
+! --- Subinterface: VLAN 99 - Management ---
+interface GigabitEthernet0/0/0.99
+ description VLAN99_MANAGEMENT
+ encapsulation dot1Q 99
+ ip address 172.16.0.2 255.255.255.0
+ exit
+
+! --- G0/0/1: WAN to R3 (Simulated T1) ---
+interface GigabitEthernet0/0/1
+ description WAN_TO_R3_BRANCH
+ ip address 10.0.1.1 255.255.255.252
+ bandwidth 1544
+ no shutdown
+ exit
+
+! ============================================================
+! OSPF
+! ============================================================
+
+router ospf 1
+ router-id 2.2.2.2
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+ network 192.168.40.0 0.0.0.255 area 0
+ network 172.16.0.0 0.0.0.255 area 0
+ network 10.0.1.0 0.0.0.3 area 0
+ exit
+
+! ============================================================
+! NTP (Client - syncs to R1)
+! ============================================================
+
+ntp server 172.16.0.1
+
+! ============================================================
+! SAVE
+! ============================================================
+
+end
+copy running-config startup-config
+
+! ============================================================
+! VERIFICATION COMMANDS
+! ============================================================
+! show ip interface brief
+! show standby brief
+! show ip ospf neighbor
+! show ntp associations
+! show ip ssh
+! show ip route

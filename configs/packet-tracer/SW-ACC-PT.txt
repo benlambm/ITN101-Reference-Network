@@ -1,0 +1,107 @@
+! ============================================================
+! SW-ACC - 2960-24TT (Catalyst 2960)
+! ACCESS LAYER | End-device ports
+! Packet Tracer Compatible
+! ============================================================
+
+enable
+configure terminal
+
+hostname SW-ACC
+no ip domain-lookup
+
+enable secret cisco
+service password-encryption
+
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exit
+
+line vty 0 4
+ password cisco
+ login
+ transport input telnet
+ exit
+line vty 5 15
+ password cisco
+ login
+ transport input telnet
+ exit
+
+banner motd #SW-ACC - ITN 101 Lab | Access Switch | Authorized access only#
+
+! --- VLANs ---
+
+vlan 10
+ name STUDENTS
+ exit
+vlan 20
+ name FACULTY
+ exit
+vlan 30
+ name SERVERS
+ exit
+vlan 99
+ name MANAGEMENT
+ exit
+vlan 999
+ name BLACKHOLE
+ exit
+
+! --- Trunk uplink ---
+
+interface FastEthernet0/24
+ description TRUNK_TO_SW-DIST
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! --- Access ports ---
+
+interface range FastEthernet0/1 - 4
+ description STUDENT_PC
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+ exit
+
+interface range FastEthernet0/5 - 8
+ description FACULTY_PC
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+ exit
+
+interface range FastEthernet0/9 - 12
+ description SERVER_PORT
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+ no shutdown
+ exit
+
+interface range FastEthernet0/13 - 23
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+! --- Management ---
+
+interface Vlan99
+ ip address 172.16.0.12 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.0.1
+
+ntp server 172.16.0.1
+
+end
+copy running-config startup-config

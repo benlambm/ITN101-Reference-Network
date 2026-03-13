@@ -1,0 +1,162 @@
+! ============================================================
+! SW-DIST - Catalyst 1000 | DISTRIBUTION LAYER
+! L2 Backbone: Trunks to R1, R2, SW-ACC, WAP-1
+! VLANs 10, 20, 30, 40, 99, 999
+! Telnet access
+! ============================================================
+
+enable
+configure terminal
+
+! --- Hostname ---
+hostname SW-DIST
+no ip domain-lookup
+
+! --- Security ---
+enable secret cisco
+service password-encryption
+
+! --- Console ---
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exec-timeout 30 0
+ exit
+
+! --- VTY (Telnet) ---
+line vty 0 4
+ password cisco
+ login
+ transport input telnet
+ exec-timeout 30 0
+ exit
+line vty 5 15
+ password cisco
+ login
+ transport input telnet
+ exit
+
+! --- Banner ---
+banner motd #
+*****************************************************
+*  SW-DIST - ITN 101 Lab | Distribution Switch      *
+*  Catalyst 1000 | L2 Backbone                      *
+*  Authorized access only                            *
+*****************************************************
+#
+
+! ============================================================
+! VLANs
+! ============================================================
+
+vlan 10
+ name STUDENTS
+ exit
+vlan 20
+ name FACULTY
+ exit
+vlan 30
+ name SERVERS
+ exit
+vlan 40
+ name WIRELESS
+ exit
+vlan 99
+ name MANAGEMENT
+ exit
+vlan 999
+ name BLACKHOLE
+ exit
+
+! ============================================================
+! TRUNK PORTS
+! ============================================================
+
+! --- Gi1/0/1: Trunk to R1 (Core) ---
+interface GigabitEthernet1/0/1
+ description TRUNK_TO_R1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! --- Gi1/0/2: Trunk to R2 (Core) ---
+interface GigabitEthernet1/0/2
+ description TRUNK_TO_R2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! --- Gi1/0/3: Trunk to SW-ACC (Access switch uplink) ---
+interface GigabitEthernet1/0/3
+ description TRUNK_TO_SW-ACC
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! --- Gi1/0/4: Trunk to WAP-1 (Wireless AP) ---
+interface GigabitEthernet1/0/4
+ description TRUNK_TO_WAP-1
+ switchport mode trunk
+ switchport trunk allowed vlan 40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! ============================================================
+! UNUSED PORTS --> BLACKHOLE
+! ============================================================
+
+interface range GigabitEthernet1/0/5 - 24
+ description UNUSED_BLACKHOLED
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+! ============================================================
+! MANAGEMENT SVI
+! ============================================================
+
+interface Vlan99
+ description MANAGEMENT_SVI
+ ip address 172.16.0.11 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.0.1
+
+! ============================================================
+! NTP (Client - syncs to R1)
+! ============================================================
+
+ntp server 172.16.0.1
+
+! ============================================================
+! SPANNING TREE (optional hardening)
+! ============================================================
+
+! Make distribution switch the STP root for all VLANs
+spanning-tree vlan 10,20,30,40,99 root primary
+
+! ============================================================
+! SAVE
+! ============================================================
+
+end
+copy running-config startup-config
+
+! ============================================================
+! VERIFICATION COMMANDS
+! ============================================================
+! show vlan brief
+! show interfaces trunk
+! show spanning-tree summary
+! show ntp associations
+! show ip interface brief

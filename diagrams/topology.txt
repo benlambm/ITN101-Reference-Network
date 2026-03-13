@@ -1,0 +1,89 @@
+ITN 101 Reference Network - Topology Diagram
+==============================================
+
+Physical Lab Rack (Brightpoint Community College)
+--------------------------------------------------
+
+                          [Internet / ISP]
+                                |
+                           G0/0/0 (ISP-assigned / DHCP)
+                      +--------------------+
+                      | R1 - ISR 4221      |  CORE (HSRP Active VL10/40)
+                      | HSRP Pri: 110/100  |  NAT, DHCP, NTP Master
+                      | ID: 1.1.1.1        |
+                      +--------------------+
+                        G0/0/1 |
+                   (802.1Q trunk: VL 10,20,40,99)
+                               |
+       +---+-------------------+-------------------+---+
+       |        SW-DIST — Catalyst 1000                |
+       |     DISTRIBUTION LAYER (L2 backbone)          |
+       |   Trunks: VLANs 10, 20, 30, 40, 99           |
+       |   STP Root for all VLANs                      |
+       +--+--------+--------+--------+--------+-------+
+       Gi1/0/1  Gi1/0/2  Gi1/0/3  Gi1/0/4  Gi1/0/5+
+       (R1)     (R2)     (SW-ACC)  (WAP)    (unused)
+                  |         |        |
+             G0/0/0         |     [WAP-1]
+        (802.1Q trunk)      |    Wireless AP
+      +--------------------+|    SSID: ITN101-WIFI
+      | R2 - ISR 4221      ||   VLAN 40: 192.168.40.0/24
+      | HSRP Pri: 100/110  ||
+      | ID: 2.2.2.2        ||
+      +--------------------+|
+        G0/0/1 |            |
+     10.0.1.1  |            |
+               | WAN Link   |
+               | 10.0.1.0/30|
+     10.0.1.2  |            |
+          G0/1 |         Fa0/24 (trunk)
+      +--------------------+            |
+      | R3 - ISR 1941      |   +--------+----------+
+      | Branch Router       |   | SW-ACC — Cat 2960 |
+      | ID: 3.3.3.3         |   |   ACCESS LAYER    |
+      | Serial: S0/0/0,S0/0/1  +--+-+-+-+-+-+-+----+
+      +--------------------+      | | | | | | |
+          G0/0 |                Fa0/1-4  Fa0/5-8  Fa0/9-12
+    192.168.30.1|                VL10     VL20     VL30
+               |                [PCs]    [PCs]    [Servers]
+          (Branch LAN)
+          VLAN 30: 192.168.30.0/24
+
+
+IP Addressing Summary
+---------------------
+
+  Network          Subnet             Gateway (HSRP)    Active Router
+  ───────────────  ─────────────────  ────────────────  ─────────────
+  VLAN 10 Students 192.168.10.0/24   192.168.10.1      R1 (pri 110)
+  VLAN 20 Faculty  192.168.20.0/24   192.168.20.1      R2 (pri 110)
+  VLAN 30 Servers  192.168.30.0/24   192.168.30.1      R3 (no HSRP)
+  VLAN 40 Wireless 192.168.40.0/24   192.168.40.1      R1 (pri 110)
+  WAN R2↔R3        10.0.1.0/30       —                  —
+  Management       172.16.0.0/24     172.16.0.1 (R1)    —
+
+
+HSRP Address Map
+-----------------
+
+  VLAN    Virtual (.1)    R1 Physical    R2 Physical    Active
+  ──────  ──────────────  ─────────────  ─────────────  ──────
+  10      192.168.10.1    .2 (pri 110)   .3 (pri 100)   R1
+  20      192.168.20.1    .3 (pri 100)   .2 (pri 110)   R2
+  40      192.168.40.1    .2 (pri 110)   .3 (pri 100)   R1
+
+
+Physical Cabling
+-----------------
+
+  From             Interface     To               Interface      Notes
+  ───────────────  ────────────  ───────────────  ────────────  ──────────────
+  R1               G0/0/0        ISP/Campus       —             NAT outside
+  R1               G0/0/1        SW-DIST          Gi1/0/1       Trunk
+  R2               G0/0/0        SW-DIST          Gi1/0/2       Trunk
+  R2               G0/0/1        R3               G0/1          WAN (sim T1)
+  SW-DIST          Gi1/0/3       SW-ACC           Fa0/24        Trunk
+  SW-DIST          Gi1/0/4       WAP-1            Ethernet      Trunk (VL40)
+  SW-ACC           Fa0/1-4       PCs              Fa0           Access VL10
+  SW-ACC           Fa0/5-8       PCs              Fa0           Access VL20
+  SW-ACC           Fa0/9-12      Servers          Fa0           Access VL30
