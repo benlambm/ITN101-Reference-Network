@@ -10,10 +10,6 @@ desktop.ini
 .vscode/
 .idea/
 
-# Packet Tracer
-*.pkt
-*.pkz
-
 # Office temp files
 ~$*.docx
 ~$*.pptx

@@ -73,7 +73,6 @@ Before escalating, students should attempt:
 This SLA does **not** cover:
 
 - Internet speed or bandwidth (campus uplink is shared and not under lab control)
-- Packet Tracer virtual labs (software issues are outside network SLA scope)
 - Student-caused outages during lab exercises (expected and educational)
 - Force majeure (power outages, campus closures, natural disasters)
 

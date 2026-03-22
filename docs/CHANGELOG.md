@@ -45,7 +45,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO 86
 ### Added
 - `inventory/ITN101_Network_Inventory.xlsx` — Hardware asset inventory, IPAM plan, switch port maps, cabling matrix, and OSPF summary (6 tabs)
 - `docs/CHANGELOG.md` — This file
-- `docs/KNOWN_ISSUES.md` — Known issues, hardware quirks, and Packet Tracer limitations
+- `docs/KNOWN_ISSUES.md` — Known issues and hardware quirks
 - `docs/runbooks/` — Operational runbooks:
   - `ios-upgrade.md` — IOS upgrade procedure for ISR 4221 via USB
   - `backup-restore.md` — Config backup and restore procedures
@@ -63,10 +63,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO 86
 ### Added
 - Initial repository release
 - Golden configs for all 5 network devices (R1, R2, R3, SW-DIST, SW-ACC)
-- Packet Tracer-compatible configs with device substitutions
 - `README.md` with full architecture overview, IP addressing, credentials, protocols, and teaching notes
 - `diagrams/topology.txt` — ASCII topology with addressing tables and cabling matrix
-- `labs/PACKET_TRACER_BUILD_GUIDE.md` — Step-by-step Packet Tracer assembly instructions
 - `docs/ITN101_Reference_Network.docx` — Full reference documentation (accessible format)
 - `docs/ITN101_Golden_Configs.docx` — Consolidated config guide with verification commands
 - `slides/ITN101_Reference_Network.pptx` — 6-slide reference deck
