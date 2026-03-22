@@ -1,8 +1,8 @@
 # ITN 101 Reference Network
 
-**A complete, documented campus network built on real Cisco hardware — and your reference for how production networks are designed, deployed, and maintained.**
+**A complete, documented Local Area Network built on enterprise-grade Cisco hardware**
 
-This repository is the knowledge base for the ITN 101 (Introduction to Network Concepts) lab network at Brightpoint Community College, REDACTED. It contains the device configurations, IP addressing plan, operational procedures, governance policies, and change-management records for a 3-tier enterprise network with HSRP redundancy. Everything here mirrors the documentation practices used in real-world IT organizations — just scaled to fit our five-device lab rack.
+This repository is the knowledge base for the ITN 101 (Introduction to Network Concepts) labs at Brightpoint Community College, REDACTED. It contains Sample/reference device configurations, IP addressing plan, operational procedures, governance policies, and change-management records for a 3-tier enterprise network with HSRP redundancy. Everything here mirrors the documentation practices used in real-world IT organizations.
 ---
 
 ## Architecture
@@ -33,22 +33,22 @@ This repository is the knowledge base for the ITN 101 (Introduction to Network C
 
 ### Design Highlights
 
-- **3-Tier Hierarchy** — Core (routing + redundancy), Distribution (L2 aggregation), Access (endpoint connectivity)
-- **HSRP Load Balancing** — R1 active for VLANs 10/40, R2 active for VLAN 20; no idle standby
-- **OSPF Area 0** — Dynamic routing across all routers; R1 originates default route
-- **Router-on-a-Stick** — Inter-VLAN routing via 802.1Q subinterfaces on both core routers
-- **Simulated T1 WAN** — GigE link between R2 and R3 with `bandwidth 1544`
-- **Wireless VLAN** — Dedicated VLAN 40 for AP clients, HSRP-protected
-- **Security Best Practices** — SSH on core routers, VLAN 999 blackhole for unused ports, separate management VLAN
+- **3-Tier Hierarchy** — Core (dynamic routing + router redundancy), Distribution (static routing + aggregation), Access (endpoint connectivity)
+- **HSRP Load Balancing** [not implemented yet]
+- **OSPF Area 0** [not implemented yet]
+- **Router-on-a-Stick** [not implemented yet]
+- **Simulated T1 WAN** — GigE link between R2 and R3 with `bandwidth 1544` to simulate remote network
+- **Wireless VLAN** — [not implemented yet]
+- **Security Best Practices** — VLAN segmentation, SSH rollout
 
 ---
 
-## IP Addressing
+## IP Addressing [UNDER CONSTRUCTION]
 
 | Network | Subnet | Gateway | Notes |
 |---------|--------|---------|-------|
 | VLAN 10 — Students | `192.168.10.0/24` | `.1` (HSRP) | R1 active |
-| VLAN 20 — Faculty | `192.168.20.0/24` | `.1` (HSRP) | R2 active |
+| VLAN 20 — Staff | `192.168.20.0/24` | `.1` (HSRP) | R2 active |
 | VLAN 30 — Servers | `192.168.30.0/24` | `.1` (R3) | Branch LAN |
 | VLAN 40 — Wireless | `192.168.40.0/24` | `.1` (HSRP) | R1 active |
 | WAN (R2 ↔ R3) | `10.0.1.0/30` | — | Simulated T1 |
@@ -60,21 +60,21 @@ This repository is the knowledge base for the ITN 101 (Introduction to Network C
 
 ## Physical Lab Hardware
 
-| Label | Model | Role | Mgmt IP |
-|-------|-------|------|---------|
-| R1 | Cisco ISR 4221 | Core (HSRP Active VL10/40) | 172.16.0.1 |
-| R2 | Cisco ISR 4221 | Core (HSRP Active VL20) | 172.16.0.2 |
-| R3 | Cisco ISR 1941 | Branch Router | 172.16.0.3 |
-| SW-DIST | Cisco Catalyst 1000 | Distribution Switch | 172.16.0.11 |
-| SW-ACC | Cisco Catalyst 2960 | Access Switch | 172.16.0.12 |
-| WAP-1 | TBD | Wireless Access Point | 172.16.0.20 |
-| PDU | CyberPower CPS-1215RM | Power Distribution | — |
+| Label | Model | Role | 
+|-------|-------|------|
+| R1 | Cisco ISR 4221 | Core (HSRP Active VL10/40) | 
+| R2 | Cisco ISR 4221 | Core (HSRP Active VL20) | 
+| R3 | Cisco ISR 1941 | Branch Router | 
+| SW-DIST | Cisco Catalyst 1000 | Distribution Switch | 
+| SW-ACC | Cisco Catalyst 2960 | Access Switch | 
+| WAP-1 | TBD | Wireless Access Point | 
+| PDU | CyberPower CPS-1215RM | Power Distribution | 
 
 ---
 
 ## What's in This Repo
 
-This repository is organized the way a real IT team would maintain documentation for a production network. Each folder serves a specific purpose, and understanding this structure is itself a learning objective — you will encounter these same categories of documentation in any enterprise environment.
+This repository is organized the way a real IT team would maintain documentation for a production network. Each folder serves a specific purpose, and understanding this structure is itself a learning objective. You will encounter these same categories of documentation in any enterprise environment.
 
 ### `configs/` — Golden Configurations
 
@@ -86,7 +86,7 @@ In any organization, you need to know what you have and where it is. The invento
 
 ### `change-management/` — Requests for Change (RFCs)
 
-In a production environment, you don't just log into a router and start typing commands. **Change management** is the process of proposing, reviewing, approving, and documenting changes before they are made. This prevents outages caused by untested or poorly planned modifications. This folder contains a blank RFC (Request for Change) template in Word format, a filled-in example based on an actual IOS upgrade we performed, and the policy document that defines when an RFC is required and how the approval process works. Even in our small lab, practicing this discipline builds habits that matter in the real world.
+In a production environment, you don't just log into a router and start typing commands. **Change management** is the process of proposing, reviewing, approving, and documenting changes before they are made. This prevents outages caused by untested or poorly planned modifications. This folder contains a blank RFC (Request for Change) template, a filled-in example based on an actual IOS upgrade, and the policy document that defines when an RFC is required and how the approval process works. 
 
 ### `policies/` — Governance & Standards
 
@@ -101,16 +101,16 @@ Policies are the rules of the road. Every network needs them, and in a professio
 ### `docs/runbooks/` — Operational Runbooks
 
 A **runbook** (also called a Standard Operating Procedure, or SOP) is a step-by-step procedure for a specific operational task. The idea is that any qualified person should be able to pick up a runbook and execute the procedure without guessing. Good runbooks reduce human error and make knowledge transferable — you don't want critical procedures locked inside one person's head. Our runbooks cover:
-
-- **[IOS Upgrade](docs/runbooks/ios-upgrade.md)** — Upgrading router firmware via USB
-- **[Backup & Restore](docs/runbooks/backup-restore.md)** — Saving and restoring device configurations
-- **[HSRP Failover Demo](docs/runbooks/hsrp-failover.md)** — Testing redundancy by failing over between routers
-- **[Add a VLAN](docs/runbooks/add-vlan.md)** — End-to-end procedure for adding a new VLAN across the entire network
 - **Factory Reset** — Returning each device to factory defaults, from easy (admin access) to hard (locked out, password unrecoverable):
   [ISR 4221 (R1/R2)](docs/runbooks/factory-reset-isr4221.md) ·
   [ISR 1941 (R3)](docs/runbooks/factory-reset-isr1941.md) ·
   [Catalyst 1000 (SW-DIST)](docs/runbooks/factory-reset-c1000.md) ·
   [Catalyst 2960 (SW-ACC)](docs/runbooks/factory-reset-c2960.md)
+- **[IOS Upgrade](docs/runbooks/ios-upgrade.md)** — Upgrading router firmware via USB
+- **[Backup & Restore](docs/runbooks/backup-restore.md)** — Saving and restoring device configurations
+- **[HSRP Failover Demo](docs/runbooks/hsrp-failover.md)** — Testing redundancy by failing over between routers
+- **[Add a VLAN](docs/runbooks/add-vlan.md)** — End-to-end procedure for adding a new VLAN across the entire network
+
 
 ### `diagrams/` — Topology & Rack Layout
 
@@ -180,37 +180,22 @@ ITN101-Reference-Network/
 
 ## Quick Start
 
-### Physical Lab Deployment
-
-1. Cable the rack per the [cabling table](diagrams/topology.txt)
-2. Console into each device (9600/8N1)
-3. Factory-reset each device to clear any previous configs — see the device-specific runbooks:
-   [ISR 4221](docs/runbooks/factory-reset-isr4221.md) ·
-   [ISR 1941](docs/runbooks/factory-reset-isr1941.md) ·
-   [Catalyst 1000](docs/runbooks/factory-reset-c1000.md) ·
-   [Catalyst 2960](docs/runbooks/factory-reset-c2960.md)
-4. Paste golden configs **in order**: R1 → R2 → SW-DIST → SW-ACC → R3
-   (This order matters — see [backup-restore.md](docs/runbooks/backup-restore.md) for why)
-5. Verify with `show standby brief`, `show ip ospf neighbor`, `show ip dhcp binding`
-
----
-
-## Credentials
+### Credentials
 
 This is a **classroom demo environment**. All credentials are intentionally simple.
 
 | Credential | Value |
 |-----------|-------|
-| Enable secret | `cisco` |
+| Enable secret | `cisco` or `class` |
 | Console password | `cisco` |
 | VTY password (switches/R3) | `cisco` |
 | SSH username (R1/R2) | `admin` |
-| SSH password (R1/R2) | `cisco` |
+| SSH password (R1/R2) | `class` |
 | Domain name | `itn101.lab` |
 
 ---
 
-## Protocols & Services
+### Protocols & Services [Not implemented yet]
 
 | Protocol | Device | Details |
 |----------|--------|---------|
@@ -227,23 +212,7 @@ This is a **classroom demo environment**. All credentials are intentionally simp
 
 ---
 
-## Design Decisions Worth Understanding
 
-This network was built with specific choices that mirror real-world best practices. Understanding *why* things are configured a certain way is just as important as knowing *how*.
-
-**SSH vs. Telnet** — R1 and R2 (the ISR 4221s) use SSH for remote access. SW-DIST, SW-ACC, and R3 use Telnet. This is deliberate. If you run a packet capture on a Telnet session, you'll see the password in plaintext. SSH encrypts everything. Both are in this lab so you can see the difference for yourself.
-
-**OSPF instead of static routes** — We could have hard-coded every route manually. Instead, all three routers run OSPF (Open Shortest Path First), a dynamic routing protocol. Add a new subnet to any router, and every other router learns about it automatically. R1 advertises the default route to the internet via `default-information originate`, so R3 doesn't need a static default — it learns it through OSPF.
-
-**HSRP load balancing** — R1 and R2 both carry traffic simultaneously. R1 is the active gateway for VLANs 10 and 40, R2 is active for VLAN 20. If either router fails, the other takes over all VLANs. Redundancy doesn't mean one router sits idle waiting for a failure.
-
-**VLAN 999 blackhole** — Every unused switch port is assigned to VLAN 999, which has no gateway and no routing. This means someone can't walk up to an empty port, plug in a laptop, and get on the network. It's a basic security measure, but it's one that many production networks skip (and shouldn't).
-
-**Third octet = VLAN ID** — The IP scheme uses the third octet to match the VLAN number: 192.168.**10**.x = VLAN **10**, 192.168.**20**.x = VLAN **20**, and so on. This is a naming convention (documented in [policies/naming-conventions.md](policies/naming-conventions.md)) that makes the entire addressing scheme self-documenting.
-
-### HSRP Failover Demo
-
-This is one of the best demonstrations in the course. See the full procedure in [docs/runbooks/hsrp-failover.md](docs/runbooks/hsrp-failover.md), but the short version: start a continuous ping from a VLAN 10 PC to the gateway (`ping -t 192.168.10.1`), then shut down R1's subinterface. You'll see 1-3 pings drop, then traffic resumes through R2 — automatically, with no human intervention. Bring R1 back up and preemption restores the original state. The whole thing takes about 60 seconds.
 
 ### Troubleshooting Sequence
 
@@ -261,15 +230,15 @@ If step 2 fails but step 1 works, the problem is between your device and the swi
 
 ---
 
-## Course Alignment
+### Course Alignment
 
 - **CompTIA Network+ (N10-009)**: VLANs, subnetting, DHCP/DNS, NAT, routing, redundancy, wireless
 - **Cisco CCNA (200-301)**: OSPF, HSRP, SSH, STP, trunk/access ports, router-on-a-stick
-- **REDACTED ITE/ITN Curriculum**: ITN 101 Introduction to Network Concepts
+- **REDACTED ITN Curriculum**: ITN101 Introduction to Network Concepts
 
 ---
 
-## Contributing
+### Contributions Welcome
 
 1. Fork the repo
 2. Adjust IP schemes, VLANs, or device models to match your lab
