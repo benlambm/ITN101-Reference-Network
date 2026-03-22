@@ -1,0 +1,283 @@
+! ============================================================
+! SW-DIST - Catalyst 1000 | SIMPLIFIED GOLDEN CONFIG
+! ============================================================
+!
+! PURPOSE:  Get the distribution switch running with VLANs and
+!           trunks before adding STP tuning, R2, or the WAP.
+!           This is the "backbone" -- it connects R1 to SW-ACC.
+!
+! TOPOLOGY (simplified -- no R2 or WAP yet):
+!   Gi1/0/1 -------> R1 (ISR 4221)   802.1Q trunk
+!   Gi1/0/3 -------> SW-ACC (2960)    802.1Q trunk
+!   Gi1/0/2          Reserved for R2 (future HSRP lab)
+!   Gi1/0/4          Reserved for WAP-1 (future wireless lab)
+!   Gi1/0/5-24       Blackholed (shutdown, VLAN 999)
+!
+! MANAGEMENT:
+!   VLAN 99 SVI: 172.16.0.11/24
+!   Default gateway: 172.16.0.1 (R1)
+!
+! CREDENTIALS:
+!   Enable secret:  cisco
+!   Console:        cisco
+!   SSH:            admin / cisco
+!
+! ============================================================
+
+
+enable
+configure terminal
+
+
+! ============================================================
+! STEP 1: HOSTNAME & DOMAIN
+! ============================================================
+! Domain name is needed for SSH key generation.
+
+hostname SW-DIST
+no ip domain-lookup
+ip domain-name itn101.lab
+
+
+! ============================================================
+! STEP 2: PASSWORDS
+! ============================================================
+
+enable secret cisco
+service password-encryption
+
+! --- Console line ---
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exec-timeout 30 0
+ exit
+
+
+! ============================================================
+! STEP 3: SSH
+! ============================================================
+! The golden config uses telnet, but SSH is more realistic
+! and consistent with R1. Same credentials: admin / cisco.
+
+username admin privilege 15 secret cisco
+crypto key generate rsa modulus 2048
+
+line vty 0 4
+ login local
+ transport input ssh
+ exec-timeout 30 0
+ exit
+
+line vty 5 15
+ login local
+ transport input ssh
+ exec-timeout 30 0
+ exit
+
+ip ssh version 2
+
+
+! ============================================================
+! STEP 4: BANNER
+! ============================================================
+
+banner motd #
+*****************************************************
+*  SW-DIST - ITN 101 Lab | Distribution Switch      *
+*  Catalyst 1000 | L2 Backbone (Simplified)          *
+*  Authorized access only                            *
+*****************************************************
+#
+
+
+! ============================================================
+! STEP 5: CREATE VLANs
+! ============================================================
+! Every switch in the network needs the same VLAN database.
+! Even if a switch doesn't have ports in a VLAN, it still
+! needs to know about it to pass tagged frames on trunks.
+!
+! Remember: third octet = VLAN ID (192.168.10.x = VLAN 10).
+
+vlan 10
+ name STUDENTS
+ exit
+
+vlan 20
+ name FACULTY
+ exit
+
+vlan 30
+ name SERVERS
+ exit
+
+vlan 40
+ name WIRELESS
+ exit
+
+vlan 99
+ name MANAGEMENT
+ exit
+
+vlan 999
+ name BLACKHOLE
+ exit
+
+
+! ============================================================
+! STEP 6: TRUNK PORTS
+! ============================================================
+! Trunks carry multiple VLANs over a single physical link.
+! We explicitly list which VLANs are allowed on each trunk
+! (security best practice -- never trunk "all").
+!
+! Native VLAN 99 means management frames go untagged.
+! This must match on BOTH ends of the trunk or you get
+! a native VLAN mismatch error.
+
+! --- Gi1/0/1: Trunk to R1 (router-on-a-stick) ---
+! R1 has subinterfaces for VLANs 10, 20, 40, and 99.
+! We allow exactly those VLANs.
+
+interface GigabitEthernet1/0/1
+ description TRUNK_TO_R1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,40,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+! --- Gi1/0/3: Trunk to SW-ACC (access switch uplink) ---
+! SW-ACC has ports in VLANs 10, 20, and 30.
+! VLAN 99 rides along for management.
+
+interface GigabitEthernet1/0/3
+ description TRUNK_TO_SW-ACC
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+
+! ============================================================
+! STEP 7: RESERVED PORTS (future labs)
+! ============================================================
+! These ports are shut down now but labeled so students know
+! what they are for. When you add R2 or the WAP later, just
+! paste the trunk config and "no shutdown".
+
+! --- Gi1/0/2: Reserved for R2 (HSRP lab) ---
+interface GigabitEthernet1/0/2
+ description RESERVED_R2_HSRP_LAB
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+! --- Gi1/0/4: Reserved for WAP-1 (wireless lab) ---
+interface GigabitEthernet1/0/4
+ description RESERVED_WAP-1_WIRELESS_LAB
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+
+! ============================================================
+! STEP 8: UNUSED PORTS --> BLACKHOLE
+! ============================================================
+! Every unused port goes into VLAN 999 and gets shut down.
+! This prevents someone from plugging in a rogue device.
+! VLAN 999 has no SVI, no routing, no way out -- a dead end.
+
+interface range GigabitEthernet1/0/5 - 24
+ description UNUSED_BLACKHOLED
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+
+! ============================================================
+! STEP 9: MANAGEMENT SVI
+! ============================================================
+! A switch is a Layer 2 device -- it doesn't need IP addresses
+! to forward frames. But it DOES need an IP address if you
+! want to manage it remotely (SSH, NTP, etc.).
+!
+! The SVI (Switch Virtual Interface) on VLAN 99 gives the
+! switch an IP address on the management network.
+!
+! The default-gateway tells the switch where to send traffic
+! that isn't on 172.16.0.0/24 (i.e., replies to your SSH
+! session if you're on a different subnet).
+
+interface Vlan99
+ description MANAGEMENT_SVI
+ ip address 172.16.0.11 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.0.1
+
+
+! ============================================================
+! STEP 10: NTP CLIENT
+! ============================================================
+! Syncs time from R1. Accurate timestamps matter for logs
+! and troubleshooting. R1 is the NTP master at 172.16.0.1.
+
+ntp server 172.16.0.1
+
+
+! ============================================================
+! STEP 11: SAVE YOUR WORK!
+! ============================================================
+
+end
+copy running-config startup-config
+
+
+! ============================================================
+! VERIFICATION COMMANDS
+! ============================================================
+! Run each of these to confirm the config is correct.
+!
+! show vlan brief
+!   → VLANs 10, 20, 30, 40, 99, 999 should all appear
+!   → No ports assigned to VLAN 1
+!
+! show interfaces trunk
+!   → Gi1/0/1 trunking: allowed VLANs 10,20,40,99
+!   → Gi1/0/3 trunking: allowed VLANs 10,20,30,99
+!   → Native VLAN 99 on both
+!
+! show interfaces status
+!   → Gi1/0/1 and Gi1/0/3 should be "connected" and "trunk"
+!   → Gi1/0/2, Gi1/0/4-24 should be "disabled"
+!
+! show ip interface brief
+!   → Vlan99 should show 172.16.0.11 and "up / up"
+!
+! show ntp associations
+!   → Should show 172.16.0.1 as the NTP server
+!
+! show ip ssh
+!   → SSH Enabled - version 2.0
+!
+! ping 172.16.0.1
+!   → Tests management connectivity to R1
+!
+! ============================================================
+! WHAT'S NEXT?
+! ============================================================
+! After verification:
+!   1. Configure SW-ACC (see simplified SW-ACC config)
+!   2. Connect PCs and test DHCP + inter-VLAN routing via R1
+!   3. Add R2 trunk on Gi1/0/2 (HSRP lab)
+!   4. Add WAP-1 trunk on Gi1/0/4 (wireless lab)
+!   5. Add spanning-tree root primary (STP tuning lab)
+! ============================================================
