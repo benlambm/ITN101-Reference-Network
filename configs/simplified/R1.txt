@@ -1,0 +1,280 @@
+! ============================================================
+! R1 - ISR 4221 | SIMPLIFIED GOLDEN CONFIG (Pre-HSRP)
+! ============================================================
+!
+! PURPOSE:  Fastest path to a working ISR 4221 with inter-VLAN
+!           routing, DHCP, SSH, and NTP -- no redundancy yet.
+!           HSRP, OSPF, and NAT are added in later labs.
+!
+! TOPOLOGY:
+!   G0/0/0 -------> R3 (ISR 1941)   10.0.1.0/30 point-to-point
+!   G0/0/1 -------> SW-DIST         802.1Q trunk (VLANs 10,20,40,99)
+!
+! ADDRESSING (no HSRP = R1 owns the .1 gateway directly):
+!   VLAN 10 Students   192.168.10.1/24
+!   VLAN 20 Faculty    192.168.20.1/24
+!   VLAN 40 Wireless   192.168.40.1/24
+!   VLAN 99 Management 172.16.0.1/24
+!   WAN to R3          10.0.1.1/30  <-->  10.0.1.2/30 (R3)
+!
+! CREDENTIALS:
+!   Enable secret:  cisco
+!   Console:        cisco
+!   SSH:            admin / cisco
+!
+! ============================================================
+
+
+! ============================================================
+! STEP 1: SET THE CLOCK (privileged EXEC -- do this FIRST)
+! ============================================================
+! You must set the clock BEFORE entering config mode.
+! The router has no battery-backed RTC, so it loses time on
+! every reboot until NTP syncs. Set it close enough for now.
+!
+! Format: clock set HH:MM:SS MONTH DAY YEAR
+
+enable
+clock set 09:00:00 Mar 21 2026
+
+configure terminal
+
+
+! ============================================================
+! STEP 2: HOSTNAME & DOMAIN
+! ============================================================
+! The domain name is required for SSH key generation later.
+
+hostname R1
+no ip domain-lookup
+ip domain-name itn101.lab
+
+
+! ============================================================
+! STEP 3: PASSWORDS
+! ============================================================
+! enable secret is hashed (type 5). service password-encryption
+! scrambles the plain-text passwords (type 7 -- weak but better
+! than nothing for shoulder-surfing).
+
+enable secret cisco
+service password-encryption
+security passwords min-length 5
+
+! --- Console line ---
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exec-timeout 30 0
+ exit
+
+
+! ============================================================
+! STEP 4: SSH
+! ============================================================
+! SSH requires three things:
+!   1. A hostname (done in Step 2)
+!   2. A domain name (done in Step 2)
+!   3. An RSA key pair (generated below)
+!
+! The username/password combo is what you will use to SSH in.
+
+username admin privilege 15 secret cisco
+crypto key generate rsa modulus 2048
+
+line vty 0 4
+ login local
+ transport input ssh
+ exec-timeout 30 0
+ exit
+
+ip ssh version 2
+
+
+! ============================================================
+! STEP 5: BANNER
+! ============================================================
+
+banner motd #
+*****************************************************
+*  R1 - ITN 101 Lab | Core Router (Simplified)     *
+*  Brightpoint Community College                    *
+*  Authorized access only                           *
+*****************************************************
+#
+
+
+! ============================================================
+! STEP 6: INTERFACES
+! ============================================================
+
+! --- G0/0/0: Point-to-point link to R3 (ISR 1941) ---
+! This is a simple routed link. R3 is at 10.0.1.2.
+! Think of it like a cable between two buildings.
+
+interface GigabitEthernet0/0/0
+ description WAN_TO_R3_BRANCH
+ ip address 10.0.1.1 255.255.255.252
+ no shutdown
+ exit
+
+
+! --- G0/0/1: Trunk to SW-DIST ---
+! The physical interface carries ALL VLANs. It gets no IP
+! address itself -- the subinterfaces below handle that.
+! This is called "router-on-a-stick" (ROAS).
+
+interface GigabitEthernet0/0/1
+ description TRUNK_TO_SW-DIST
+ no ip address
+ no shutdown
+ exit
+
+! --- Subinterface: VLAN 10 - Students ---
+! "encapsulation dot1Q 10" tags frames with VLAN 10.
+! Without HSRP, R1 takes the .1 address directly.
+
+interface GigabitEthernet0/0/1.10
+ description VLAN10_STUDENTS
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ exit
+
+! --- Subinterface: VLAN 20 - Faculty ---
+
+interface GigabitEthernet0/0/1.20
+ description VLAN20_FACULTY
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ exit
+
+! --- Subinterface: VLAN 40 - Wireless ---
+
+interface GigabitEthernet0/0/1.40
+ description VLAN40_WIRELESS
+ encapsulation dot1Q 40
+ ip address 192.168.40.1 255.255.255.0
+ exit
+
+! --- Subinterface: VLAN 99 - Management ---
+! Used for managing switches, APs, and this router via SSH.
+! On a different address space (172.16.x) to keep management
+! traffic separated from student/faculty data.
+
+interface GigabitEthernet0/0/1.99
+ description VLAN99_MANAGEMENT
+ encapsulation dot1Q 99
+ ip address 172.16.0.1 255.255.255.0
+ exit
+
+
+! ============================================================
+! STEP 7: DHCP POOLS
+! ============================================================
+! The router hands out addresses to PCs automatically.
+! We exclude .1 through .10 so gateways and infrastructure
+! devices never get assigned to a random laptop.
+
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+ip dhcp excluded-address 192.168.40.1 192.168.40.10
+
+ip dhcp pool VLAN10-STUDENTS
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 8.8.8.8
+ domain-name itn101.lab
+ exit
+
+ip dhcp pool VLAN20-FACULTY
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 8.8.8.8
+ domain-name itn101.lab
+ exit
+
+ip dhcp pool VLAN40-WIRELESS
+ network 192.168.40.0 255.255.255.0
+ default-router 192.168.40.1
+ dns-server 8.8.8.8
+ domain-name itn101.lab
+ exit
+
+
+! ============================================================
+! STEP 8: STATIC ROUTE TO BRANCH NETWORK
+! ============================================================
+! R3 serves the branch LAN (VLAN 30: 192.168.30.0/24).
+! We need to tell R1 how to reach it: "send traffic for
+! 192.168.30.0 to R3 at 10.0.1.2."
+!
+! In later labs, OSPF will replace this static route.
+
+ip route 192.168.30.0 255.255.255.0 10.0.1.2
+
+
+! ============================================================
+! STEP 9: NTP MASTER
+! ============================================================
+! This makes R1 the authoritative time source for the lab.
+! Stratum 4 means "I'm 4 hops from an atomic clock" -- which
+! is a polite fiction, but all other devices will sync to us.
+!
+! All other devices will use: ntp server 172.16.0.1
+
+ntp master 4
+
+
+! ============================================================
+! STEP 10: SAVE YOUR WORK!
+! ============================================================
+! If you skip this, everything disappears on the next reboot.
+! "copy run start" is the shorthand most people use.
+
+end
+copy running-config startup-config
+
+
+! ============================================================
+! VERIFICATION COMMANDS
+! ============================================================
+! Run each of these after pasting the config to confirm
+! everything is working. Expected results noted.
+!
+! show ip interface brief
+!   → All interfaces should show "up / up"
+!   → Subinterfaces show their .1 addresses
+!
+! show ip dhcp binding
+!   → Empty at first. Connect a PC and check again.
+!
+! show ip dhcp pool
+!   → Shows each pool and how many addresses are available
+!
+! show ip route
+!   → You should see C (connected) routes for each VLAN
+!   → You should see S (static) route to 192.168.30.0 via 10.0.1.2
+!
+! show ntp status
+!   → Clock is synchronized, stratum 4
+!
+! show ip ssh
+!   → SSH Enabled - version 2.0
+!
+! show clock
+!   → Should show the time you set in Step 1
+!
+! ping 10.0.1.2
+!   → Tests connectivity to R3 (should get !!!!! replies)
+!
+! ============================================================
+! WHAT'S NEXT?
+! ============================================================
+! Once this config is verified, the natural progression is:
+!   1. Configure SW-DIST and SW-ACC (see simplified switch configs)
+!   2. Connect PCs and verify DHCP + inter-VLAN routing
+!   3. Add OSPF (replace the static route with dynamic routing)
+!   4. Add a second ISR 4221 (R2) and configure HSRP
+!   5. Add NAT for internet access via G0/0/0
+! ============================================================

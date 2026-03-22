@@ -23,82 +23,45 @@ The switch reboots with no configuration and no VLANs (except default VLAN 1) an
 
 ---
 
-## Method B: Mode Button Recovery + Wipe — MODERATE
+## Method B: Mode Button Recovery + Full Wipe
 
-Use this when you cannot enter enable mode (password unknown).
+Use this when you cannot enter enable mode (password unknown) or want a complete factory reset.
 
 **Prerequisites:** Console cable connected, terminal emulator open (9600/8N1). Physical access to the switch.
 
-### Step 1: Power Off the Switch
+### The Factory Reset Protocol
 
-Disconnect the power cable from the back of the switch.
+1. **Establish a Console Session:** Connect to the switch via the console port using your preferred terminal emulator (9600 baud, 8 data bits, no parity, 1 stop bit).
+2. **Interrupt the Power:** Unplug the power cable from the switch.
+3. **Engage the Mode Button:** Press and hold the Mode button on the front panel of the switch.
+4. **Restore Power:** While continuing to hold the Mode button, plug the power cable back in.
+5. **Release and Wait:** Keep the button depressed until the SYST LED blinks amber and then turns solid green, or until the `switch:` prompt appears in your terminal window (typically about 10-15 seconds). Release the button.
 
-### Step 2: Hold the Mode Button During Power-On
-
-1. **Press and hold** the **Mode** button on the front panel (left side, below the LEDs).
-2. While holding Mode, **reconnect the power cable**.
-3. Continue holding for approximately **15 seconds** until:
-   - The System LED goes **solid green** briefly, then turns off
-   - The LEDs cycle through their startup pattern
-4. Release the Mode button.
-
-> **Tip:** The exact LED behavior varies slightly by firmware. The key indicator is that the switch interrupts normal boot and drops to the boot loader prompt. Watch your console — you should see `switch:` appear.
-
-### Step 3: At the Boot Loader Prompt
-
-Rename the existing config so the switch boots clean:
+You are now in the ROMMON/bootloader environment. Execute the following sequence to completely obliterate the existing configuration and VLAN database:
 
 ```
-switch: rename flash:config.text flash:config.text.old
+switch: flash_init
+switch: delete flash:config.text
+switch: delete flash:vlan.dat
 switch: boot
 ```
 
-The switch boots with no configuration.
+> **Note:** Press `y` or confirm if the system prompts you to verify the deletions.
 
-### Step 4: Choose — Recover or Wipe
+### Post-Boot Cleanup
 
-**To recover the existing config with a new password:**
+Once the switch finishes its boot sequence, it will present the System Configuration Dialog.
+
+1. Type `no` to bypass the setup wizard.
+2. Enter privileged EXEC mode.
+3. Save the currently empty running configuration to the startup configuration. This finalizes the reset.
 
 ```
 Switch> enable
-Switch# rename flash:config.text.old flash:config.text
-Switch# copy flash:config.text running-config
-Switch# configure terminal
-Switch(config)# enable secret <new-password>
-Switch(config)# end
 Switch# copy running-config startup-config
-Switch# reload
 ```
 
-**To factory-wipe (erase everything):**
-
-```
-Switch> enable
-Switch# delete flash:config.text.old
-Switch# delete vlan.dat
-Switch# reload
-```
-
-The switch reboots clean with no configuration and no VLAN database.
-
----
-
-## Method C: If "No Service Password-Recovery" Is Enabled — HARDEST
-
-If the switch was configured with `no service password-recovery`, the Mode button behavior changes.
-
-1. Follow the same Mode button procedure (hold during power-on).
-2. Instead of dropping to the boot loader, the switch displays:
-
-   ```
-   PASSWORD RECOVERY IS DISABLED.
-   Do you want to reset the router to the factory default configuration and proceed [y/n]?
-   ```
-
-3. **Type `y`** — startup-config **and** vlan.dat are erased. The switch boots to factory defaults.
-4. **Type `n`** — normal boot continues, you remain locked out.
-
-> **Warning:** Choosing `y` permanently destroys the existing configuration and VLAN database. There is no undo.
+> **Recommendation:** Configure a new `enable secret` immediately after reset.
 
 ---
 

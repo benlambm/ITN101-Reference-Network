@@ -1,0 +1,316 @@
+! ============================================================
+! SW-ACC - Catalyst 2960 | SIMPLIFIED GOLDEN CONFIG
+! ============================================================
+!
+! PURPOSE:  Get the access switch running with VLANs, one
+!           trunk uplink, and access ports for end devices.
+!           This is where PCs and servers physically plug in.
+!
+! TOPOLOGY:
+!   Fa0/24 ---------> SW-DIST (Gi1/0/3)  802.1Q trunk
+!   Fa0/1-4           VLAN 10 (Students)
+!   Fa0/5-8           VLAN 20 (Faculty)
+!   Fa0/9-12          VLAN 30 (Servers)
+!   Fa0/13-23         Blackholed (shutdown, VLAN 999)
+!
+! MANAGEMENT:
+!   VLAN 99 SVI: 172.16.0.12/24
+!   Default gateway: 172.16.0.1 (R1)
+!
+! CREDENTIALS:
+!   Enable secret:  cisco
+!   Console:        cisco
+!   SSH:            admin / cisco
+!
+! PORT MAP (tape this to the switch for reference):
+!   ┌──────────────────────────────────────────────────┐
+!   │ Fa0/1-4    STUDENTS (VLAN 10) - blue cables      │
+!   │ Fa0/5-8    FACULTY  (VLAN 20) - green cables     │
+!   │ Fa0/9-12   SERVERS  (VLAN 30) - red cables       │
+!   │ Fa0/13-23  UNUSED   (VLAN 999) - nothing here    │
+!   │ Fa0/24     TRUNK TO SW-DIST - yellow cable        │
+!   └──────────────────────────────────────────────────┘
+!
+! ============================================================
+
+
+enable
+configure terminal
+
+
+! ============================================================
+! STEP 1: HOSTNAME & DOMAIN
+! ============================================================
+
+hostname SW-ACC
+no ip domain-lookup
+ip domain-name itn101.lab
+
+
+! ============================================================
+! STEP 2: PASSWORDS
+! ============================================================
+
+enable secret cisco
+service password-encryption
+
+! --- Console line ---
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exec-timeout 30 0
+ exit
+
+
+! ============================================================
+! STEP 3: SSH
+! ============================================================
+! Same setup as SW-DIST and R1: admin / cisco.
+! The 2960 supports SSH -- no reason to use telnet.
+
+username admin privilege 15 secret cisco
+crypto key generate rsa modulus 2048
+
+line vty 0 4
+ login local
+ transport input ssh
+ exec-timeout 30 0
+ exit
+
+line vty 5 15
+ login local
+ transport input ssh
+ exec-timeout 30 0
+ exit
+
+ip ssh version 2
+
+
+! ============================================================
+! STEP 4: BANNER
+! ============================================================
+
+banner motd #
+*****************************************************
+*  SW-ACC - ITN 101 Lab | Access Switch              *
+*  Catalyst 2960 | End-Device Ports (Simplified)     *
+*  Authorized access only                            *
+*****************************************************
+#
+
+
+! ============================================================
+! STEP 5: CREATE VLANs
+! ============================================================
+! Must match what SW-DIST has. If VLAN IDs don't match on
+! both sides of a trunk, traffic for that VLAN won't pass.
+!
+! Note: We create VLAN 40 (Wireless) even though SW-ACC has
+! no ports in it -- SW-DIST might send tagged VLAN 40 frames
+! across the trunk, and SW-ACC needs to recognize the VLAN ID.
+
+vlan 10
+ name STUDENTS
+ exit
+
+vlan 20
+ name FACULTY
+ exit
+
+vlan 30
+ name SERVERS
+ exit
+
+vlan 40
+ name WIRELESS
+ exit
+
+vlan 99
+ name MANAGEMENT
+ exit
+
+vlan 999
+ name BLACKHOLE
+ exit
+
+
+! ============================================================
+! STEP 6: TRUNK UPLINK
+! ============================================================
+! Fa0/24 is the uplink to SW-DIST. This single cable carries
+! all VLAN traffic between the access and distribution layers.
+!
+! We allow VLANs 10, 20, 30, and 99. VLAN 40 (wireless) is
+! not needed here -- it lives on SW-DIST's WAP port.
+
+interface FastEthernet0/24
+ description TRUNK_TO_SW-DIST
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+ switchport trunk native vlan 99
+ no shutdown
+ exit
+
+
+! ============================================================
+! STEP 7: ACCESS PORTS - VLAN 10 (Students)
+! ============================================================
+! "switchport mode access" = this port belongs to ONE VLAN.
+! "spanning-tree portfast" = skip the 30-second STP delay.
+!   Without portfast, PCs wait 30 seconds to get a link after
+!   plugging in. With it, the port goes straight to forwarding.
+!   Only use portfast on ports connected to end devices (PCs,
+!   printers) -- NEVER on ports connected to other switches.
+
+interface range FastEthernet0/1 - 4
+ description STUDENT_PC
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+ exit
+
+
+! ============================================================
+! STEP 8: ACCESS PORTS - VLAN 20 (Faculty)
+! ============================================================
+
+interface range FastEthernet0/5 - 8
+ description FACULTY_PC
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+ exit
+
+
+! ============================================================
+! STEP 9: ACCESS PORTS - VLAN 30 (Servers)
+! ============================================================
+! In the full topology, VLAN 30 is the branch server LAN
+! behind R3. These ports let you also connect servers locally
+! to the access switch if needed for labs.
+
+interface range FastEthernet0/9 - 12
+ description SERVER_PORT
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+ no shutdown
+ exit
+
+
+! ============================================================
+! STEP 10: UNUSED PORTS --> BLACKHOLE
+! ============================================================
+! Security habit: every port you're not using gets shut down
+! and thrown into VLAN 999. No IP, no routing, no escape.
+! If a student needs more ports later, just reassign the VLAN
+! and "no shutdown".
+
+interface range FastEthernet0/13 - 23
+ description UNUSED_BLACKHOLED
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+
+! ============================================================
+! STEP 11: MANAGEMENT SVI
+! ============================================================
+! Gives the switch an IP for remote management (SSH, NTP).
+! Remember: a switch doesn't need an IP to forward frames.
+! The SVI is purely for managing the switch itself.
+
+interface Vlan99
+ description MANAGEMENT_SVI
+ ip address 172.16.0.12 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.0.1
+
+
+! ============================================================
+! STEP 12: NTP CLIENT
+! ============================================================
+
+ntp server 172.16.0.1
+
+
+! ============================================================
+! STEP 13: SAVE YOUR WORK!
+! ============================================================
+
+end
+copy running-config startup-config
+
+
+! ============================================================
+! VERIFICATION COMMANDS
+! ============================================================
+!
+! show vlan brief
+!   → Fa0/1-4 in VLAN 10, Fa0/5-8 in VLAN 20, Fa0/9-12 in VLAN 30
+!   → Fa0/13-23 in VLAN 999
+!   → Fa0/24 should NOT appear (trunks don't show in vlan brief)
+!
+! show interfaces trunk
+!   → Fa0/24 trunking, allowed VLANs 10,20,30,99, native 99
+!
+! show interfaces status
+!   → Fa0/24 = connected, trunk
+!   → Active access ports = connected, their VLAN
+!   → Fa0/13-23 = disabled
+!
+! show ip interface brief
+!   → Vlan99 shows 172.16.0.12 and "up / up"
+!
+! show ntp associations
+!   → 172.16.0.1 as NTP server
+!
+! show ip ssh
+!   → SSH Enabled - version 2.0
+!
+! ping 172.16.0.1
+!   → Management connectivity to R1
+!
+! ping 172.16.0.11
+!   → Management connectivity to SW-DIST
+!
+!
+! ============================================================
+! QUICK TEST: END-TO-END VERIFICATION
+! ============================================================
+! After all three devices are configured (R1, SW-DIST, SW-ACC):
+!
+!   1. Plug a PC into Fa0/1 (VLAN 10 - Students)
+!      → PC should get a DHCP address in 192.168.10.x
+!      → Default gateway should be 192.168.10.1
+!
+!   2. Plug a second PC into Fa0/5 (VLAN 20 - Faculty)
+!      → PC should get a DHCP address in 192.168.20.x
+!      → Default gateway should be 192.168.20.1
+!
+!   3. From the VLAN 10 PC, ping the VLAN 20 PC
+!      → If it works: inter-VLAN routing via R1 is working!
+!      → If it fails: check trunks (show interfaces trunk),
+!        check R1 subinterfaces (show ip interface brief),
+!        and make sure the PCs got DHCP (ipconfig /all)
+!
+!   4. From either PC, ping 10.0.1.2 (R3)
+!      → If it works: the static route on R1 is correct
+!      → If it fails: check R1 routing (show ip route)
+!
+! ============================================================
+! WHAT'S NEXT?
+! ============================================================
+! After verification:
+!   1. Run the end-to-end test above
+!   2. Add R2 to SW-DIST Gi1/0/2 (HSRP redundancy lab)
+!   3. Add WAP-1 to SW-DIST Gi1/0/4 (wireless lab)
+!   4. Enable spanning-tree root on SW-DIST (STP lab)
+!   5. Add port-security on access ports (security lab)
+! ============================================================
