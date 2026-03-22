@@ -2,8 +2,7 @@
 
 **A complete, documented campus network built on real Cisco hardware — and your reference for how production networks are designed, deployed, and maintained.**
 
-This repository is the knowledge base for the ITN 101 (Introduction to Network Concepts) lab network at Brightpoint Community College, VCCS. It contains the device configurations, IP addressing plan, operational procedures, governance policies, and change-management records for a 3-tier enterprise network with HSRP redundancy. Everything here mirrors the documentation practices used in real-world IT organizations — just scaled to fit our five-device lab rack. Packet Tracer-compatible configs are included for virtual lab work at home.
-
+This repository is the knowledge base for the ITN 101 (Introduction to Network Concepts) lab network at Brightpoint Community College, VCCS. It contains the device configurations, IP addressing plan, operational procedures, governance policies, and change-management records for a 3-tier enterprise network with HSRP redundancy. Everything here mirrors the documentation practices used in real-world IT organizations — just scaled to fit our five-device lab rack.
 ---
 
 ## Architecture
@@ -79,7 +78,7 @@ This repository is organized the way a real IT team would maintain documentation
 
 ### `configs/` — Golden Configurations
 
-A **golden config** (sometimes called a "baseline config") is the known-good, approved configuration for a device. If something breaks, the golden config is what you restore to. The `golden/` subfolder contains the real IOS configs running on our physical lab devices. The `packet-tracer/` subfolder has adjusted versions that work in Cisco Packet Tracer (which uses different device models and doesn't support every command).
+A **golden config** (sometimes called a "baseline config") is the known-good, approved configuration for a device. If something breaks, the golden config is what you restore to. The `golden/` subfolder contains the real IOS configs running on our physical lab devices.
 
 ### `inventory/` — Asset Inventory & IPAM
 
@@ -119,7 +118,7 @@ Visual references for the network: a [logical topology](diagrams/topology.txt) s
 
 ### `docs/` — Reference Documents & Change Log
 
-The [CHANGELOG](docs/CHANGELOG.md) tracks every addition and modification to this repository (versioned using [Keep a Changelog](https://keepachangelog.com/) format). The [KNOWN_ISSUES](docs/KNOWN_ISSUES.md) file documents hardware quirks, Packet Tracer limitations, and open items — because in the real world, every network has a list of things that aren't quite right yet.
+The [CHANGELOG](docs/CHANGELOG.md) tracks every addition and modification to this repository (versioned using [Keep a Changelog](https://keepachangelog.com/) format). The [KNOWN_ISSUES](docs/KNOWN_ISSUES.md) file documents hardware quirks and open items — because in the real world, every network has a list of things that aren't quite right yet.
 
 ### Repository File Tree
 
@@ -130,14 +129,12 @@ ITN101-Reference-Network/
 ├── .gitignore
 │
 ├── configs/
-│   ├── golden/                        ← Production IOS configs (real hardware)
-│   │   ├── R1.txt
-│   │   ├── R2.txt
-│   │   ├── R3.txt
-│   │   ├── SW-DIST.txt
-│   │   └── SW-ACC.txt
-│   └── packet-tracer/                 ← PT-compatible configs (adjusted syntax)
-│       ├── R1-PT.txt ... SW-ACC-PT.txt
+│   └── golden/                        ← Production IOS configs (real hardware)
+│       ├── R1.txt
+│       ├── R2.txt
+│       ├── R3.txt
+│       ├── SW-DIST.txt
+│       └── SW-ACC.txt
 │
 ├── inventory/
 │   └── ITN101_Network_Inventory.xlsx  ← Asset inventory, IPAM, port maps, cabling
@@ -158,7 +155,7 @@ ITN101-Reference-Network/
 │   ├── ITN101_Reference_Network.docx  ← Full reference documentation
 │   ├── ITN101_Golden_Configs.docx     ← Consolidated config guide
 │   ├── CHANGELOG.md                   ← Version history
-│   ├── KNOWN_ISSUES.md                ← Hardware quirks, PT limitations, open items
+│   ├── KNOWN_ISSUES.md                ← Hardware quirks and open items
 │   └── runbooks/                      ← Operational procedures (SOPs)
 │       ├── ios-upgrade.md
 │       ├── backup-restore.md
@@ -177,7 +174,6 @@ ITN101-Reference-Network/
 │   └── rack-layout.md                 ← Physical rack elevation diagram
 │
 └── labs/
-    └── PACKET_TRACER_BUILD_GUIDE.md   ← Step-by-step PT assembly instructions
 ```
 
 ---
@@ -196,10 +192,6 @@ ITN101-Reference-Network/
 4. Paste golden configs **in order**: R1 → R2 → SW-DIST → SW-ACC → R3
    (This order matters — see [backup-restore.md](docs/runbooks/backup-restore.md) for why)
 5. Verify with `show standby brief`, `show ip ospf neighbor`, `show ip dhcp binding`
-
-### Packet Tracer Virtual Lab
-
-See [labs/PACKET_TRACER_BUILD_GUIDE.md](labs/PACKET_TRACER_BUILD_GUIDE.md) for detailed instructions
 
 ---
 
@@ -281,7 +273,7 @@ If step 2 fails but step 1 works, the problem is between your device and the swi
 
 1. Fork the repo
 2. Adjust IP schemes, VLANs, or device models to match your lab
-3. Submit a PR if you build something others could use (lab worksheets, Packet Tracer activities, etc.)
+3. Submit a PR if you build something others could use (lab worksheets, activities, etc.)
 
 ---
 

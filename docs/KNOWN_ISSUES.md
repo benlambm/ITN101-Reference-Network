@@ -29,27 +29,6 @@ Open-frame rack visible in lab photos. Exact model TBD. Wall-mounted or table-mo
 
 ---
 
-## Packet Tracer Limitations
-
-These are documented in `labs/PACKET_TRACER_BUILD_GUIDE.md` but repeated here for the centralized issue tracker.
-
-### Device Substitutions Required
-PT does not have exact models for ISR 4221 or Catalyst 1000. Substitutions: 4221 → 4321, C1000 → 3560-24PS. Interface naming differs (e.g., `Gi0/1` in PT vs `Gi1/0/1` on physical C1000).
-
-### `bandwidth 1544` on WAN Link
-PT accepts the command but it may not affect OSPF cost calculations in all PT versions. On real hardware, this correctly sets the OSPF interface cost.
-
-### `ntp master` Behavior
-Works in PT but `show ntp status` may show limited or inconsistent detail compared to real IOS output.
-
-### HSRP Timer Resolution
-HSRP failover in PT simulation mode is noticeably slower than in real-time mode. For classroom demos, use real-time mode for more realistic failover timing (1–3 seconds).
-
-### Limited `show` Command Output
-Several verification commands produce less detail in PT than on real hardware. Notable examples: `show standby brief` formatting, `show ip ospf interface` detail, `show controllers serial`.
-
----
-
 ## Configuration Notes
 
 ### DHCP Excluded Ranges

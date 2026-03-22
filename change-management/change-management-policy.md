@@ -25,7 +25,6 @@ This policy applies to any modification to:
 
 It does **not** apply to:
 
-- Packet Tracer lab exercises (virtual environments are disposable)
 - Read-only `show` commands on lab equipment
 - Endpoint configuration (student PCs connecting to access ports)
 
