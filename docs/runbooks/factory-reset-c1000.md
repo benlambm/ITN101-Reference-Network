@@ -40,7 +40,6 @@ Use this when you cannot enter enable mode (password unknown) or want a complete
 You are now in the ROMMON/bootloader environment. Execute the following sequence to completely obliterate the existing configuration and VLAN database:
 
 ```
-switch: flash_init
 switch: delete flash:config.text
 switch: delete flash:vlan.dat
 switch: boot
@@ -61,16 +60,12 @@ Switch> enable
 Switch# copy running-config startup-config
 ```
 
-> **Recommendation:** Configure a new `enable secret` immediately after reset.
-
 ---
 
 ## Catalyst 1000 Hardware Notes
 
 - The **Mode button** is on the front-left of the switch, near the LED mode indicators. It serves double duty: normally it cycles through LED display modes (STAT, SPD, etc.), but during power-on it triggers boot loader / recovery.
 - The C1000-24T-4G-L has **24 Gigabit Ethernet ports** and **4 SFP uplink ports** (Gi1/0/25 through Gi1/0/28).
-- There is **no USB flash slot** on the Catalyst 1000 — config backup/restore is via TFTP or console paste.
-- A factory reset does not affect the IOS image in flash — only startup-config and vlan.dat are wiped.
 
 ---
 
