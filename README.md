@@ -2,7 +2,7 @@
 
 **A complete, documented Local Area Network built on enterprise-grade Cisco hardware**
 
-This repository is the knowledge base for the ITN 101 (Introduction to Network Concepts) labs at Brightpoint Community College, REDACTED. It contains Sample/reference device configurations, IP addressing plan, operational procedures, governance policies, and change-management records for a 3-tier enterprise network with HSRP redundancy. Everything here mirrors the documentation practices used in real-world IT organizations.
+This GitHub repository is the knowledge base for the ITN 101 (Introduction to Network Concepts) labs at Brightpoint Community College, REDACTED. It contains Sample/reference device configurations, IP addressing plan, standard operational procedures(SOPs), sample policies and change-management demos for a small 3-tier enterprise network with Router redundancy. Everything here mirrors the documentation practices used in real-world IT organizations.
 ---
 
 ## Architecture
